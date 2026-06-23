@@ -4,17 +4,35 @@ import quizCompletedLogo from "../assets/quiz-complete.png";
 import QuestionTimer from "./QuestionTimer.jsx";
 
 const Quiz = () => {
+  const [answerState, setAnswerState] = useState("");
   const [userAnswers, setUserAnswers] = useState([]);
 
-  const activeQuestionIndex = userAnswers.length;
+  const activeQuestionIndex =
+    answerState === "" ? userAnswers.length : userAnswers.length - 1; // we are doing this because the activeQuestion will switch to next question immediately after we setUserAnswer state instead of showing correct or wrong status.
 
   const quizIsComplete = activeQuestionIndex === questions.length;
 
-  const handleSelectAnswer = useCallback((selectedAnser) => {
-    setUserAnswers((prevAnswers) => {
-      return [...prevAnswers, selectedAnser];
-    });
-  }, []); // useCallback is used here because it is this function that is added as a dependency to the handleSkipAnswer callback function.
+  const handleSelectAnswer = useCallback(
+    (selectedAnser) => {
+      setAnswerState("answered");
+      setUserAnswers((prevAnswers) => {
+        return [...prevAnswers, selectedAnser];
+      });
+
+      setTimeout(() => {
+        if (selectedAnser === questions[activeQuestionIndex].answers[0]) {
+          setAnswerState("correct");
+        } else {
+          setAnswerState("wrong");
+        }
+
+        setTimeout(() => {
+          setAnswerState("");
+        }, 2000);
+      }, 1000);
+    },
+    [activeQuestionIndex],
+  ); // useCallback is used here because it is this function that is added as a dependency to the handleSkipAnswer callback function.
 
   const handleSkipAnswer = useCallback(
     () => handleSelectAnswer(answer),
@@ -43,11 +61,28 @@ const Quiz = () => {
         />
         <h2>{questions[activeQuestionIndex].text}</h2>
         <ul id="answers">
-          {shuffleAnswers.map((answer) => (
-            <li key={answer} className="answer">
-              <button onClick={handleSkipAnswer}>{answer}</button>
-            </li>
-          ))}
+          {shuffleAnswers.map((answer) => {
+            let cssClass = "";
+            const isSelected = userAnswers[userAnswers.length - 1] === answer;
+
+            if (answerState === "answered" && isSelected) {
+              cssClass = "selected";
+            }
+
+            if (
+              (answerState === "correct" || answerState === "wrong") &&
+              isSelected
+            ) {
+              cssClass = answerState;
+            }
+            return (
+              <li key={answer} className="answer">
+                <button onClick={handleSkipAnswer} className={cssClass}>
+                  {answer}
+                </button>
+              </li>
+            );
+          })}
         </ul>
       </div>
     </div>
